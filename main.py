@@ -7,6 +7,7 @@ import string
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+
 class Game:
     def __init__(self, home : str, away : str, spread : float, prediction : float, success : bool, home_score : int, away_score : int):
         self.Home = home
@@ -182,13 +183,13 @@ def run():
     win = math.ceil(win)
     #print("\nYou must win " + str(win) + " out of " + str(total) + " to profit")
     return data
-data = run()
 
 #Create list of games to add to week
 #Trying to make a function that needs to be ran once per week, on monday
 #data is a list all of the necessary data, before the game is played
 #data does not contain the game score
 def run_on_mondays():
+    data = run()
     weekly_game_prediction_list = []
     for game in data:
         #check if prediction is far enough from spread to be considered a good bet
@@ -196,12 +197,17 @@ def run_on_mondays():
             weekly_game_prediction_list.append(Game(game[0][1], game[0][0], game[3], game[2], False, -1, -1))
     
     week_number = 1 # scrape from vegas insider
-    week = Week(week_number, weekly_game_prediction_list, 0, 0, len(weekly_game_prediction_list))
+    #Delete this weeks document to avoid duplicate
+    qeury = {"Num", week_number}
     gameDB = client["game-database"] #database name
     weeks = gameDB["weeks-collection"] #collection name
+    week = Week(week_number, weekly_game_prediction_list, 0, 0, len(weekly_game_prediction_list))
+
+    weeks.delete_one(qeury)
     weeks.insert_one(week.turn_to_dict())
 
 run_on_mondays()
+client.close()
 
 
 #example of adding to database   
