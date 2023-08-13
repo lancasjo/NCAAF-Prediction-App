@@ -246,9 +246,14 @@ def update_bets():
     #get current data from db if it exists
     #if it doesn't exist, create a new week
     #if it does exist, re-evaluate the week against the new data and update the db
+    soup = scrape_vegas_insider()
+    header_h2_text = soup.select('header.module-header.justified.flex-wrapped h2')
+    text = header_h2_text[0].get_text()
 
-    week_number = 1 # scrape from vegas insider
-
+    # Use regular expressions to extract the number from the text
+    match = re.search(r'\d+', text)
+    week_number = int(match.group())
+   
     #get current week from db
     gameDB = client["game-database"] #database name
     weeks = gameDB["weeks-collection"] #collection name
@@ -276,15 +281,18 @@ def update_bets():
             else:
                 week["Games"].append(new_game.turn_to_dict())
         #week = update_week(week)
+        week["Num"] = len(games_to_add)
         weeks.update_one(query, {"$set": week}, upsert=True)
+        print("Week " + str(week_number) + " updated in database")
+
 
     #Down here we also need to update the previous week with the scores, as well as success.
     else:
         new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
         #new_week.update()
         weeks.insert_one(new_week.turn_to_dict())
+        print("Week " + str(week_number) + " added to database")
 
-    print("Week " + str(week_number) + " added to database")
 
 
 def update_html():
