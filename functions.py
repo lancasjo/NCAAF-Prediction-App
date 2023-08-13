@@ -306,7 +306,8 @@ def update_html():
 
     db = client["game-database"]
     collection = db["html_content"]
-    collection.insert_one({"sagrin": sagrin_content, "vegas": vegas_content})
+    collection.insert_one({"sagrin": sagrin_content})
+    collection.insert_one({"vegas": vegas_content})
     print("HTML updated")
 
 
