@@ -3,13 +3,15 @@ import requests
 import re
 import math
 import string
+import hashlib
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
 
 class Game:
-    def __init__(self, home : str, away : str, spread : float, prediction : float, success : bool, home_score : int, away_score : int):
+    def __init__(self, week: int, home : str, away : str, spread : float, prediction : float, success : bool, home_score : int, away_score : int):
+        self.Week = week
         self.Home = home
         self.Away = away
         self.Spread = spread
@@ -17,10 +19,20 @@ class Game:
         self.Success = success
         self.HomeScore = home_score
         self.AwayScore = away_score
+        self._id = generate_game_id(self)
+    
+    def update(self, new_game):
+        self.Spread = new_game.Spread
+        self.Prediction = new_game.Prediction
+        self.Success = new_game.Success
+        self.HomeScore = new_game.HomeScore
+        self.AwayScore = new_game.AwayScore
+
     
     def turn_to_dict(self):
         
         return {
+            "_id": self._id,
             "Away": self.Away,
             "Home": self.Home,
             "Spread": self.Spread,
@@ -31,7 +43,7 @@ class Game:
         }
 
 class Week:
-    def __init__(self, num : int, games : list, correct : int, incorrect : int, num_games : int):
+    def __init__(self, num : int, games : list, correct : int , incorrect : int , num_games : int):
         self.Num = num
         self.Games = games
         self.Correct = 0
@@ -47,6 +59,15 @@ class Week:
             "Num Games": self.NumGames
         }
     
+    def update(self):
+        self.NumGames = len(self.Games)
+        for game in self.Games:
+            if game.Success:
+                self.Correct += 1
+            else:
+                self.Incorrect += 1
+        
+    
 name_conversion = {"UMass": "Massachusetts",
                     "USC": "Southern California",
                     "Florida International": "Fla International",
@@ -61,6 +82,9 @@ name_conversion = {"UMass": "Massachusetts",
                     "North Carolina A&T": "NC AT"}
 
 uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
+
+#URI for local testing 
+#uri = "mongodb://localhost:27017/?readPreference=primary&ssl=false&retryWrites=true&w=majority&appname=NCAAFBetting"
 
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
@@ -137,6 +161,24 @@ def find_odds(tbody_tag):
     
     return game_odds
 
+
+def _generate_game_id(week : int, home : str, away : str):
+    combined_data = f"{week}{home}{away}"
+    hash_object = hashlib.md5(combined_data.encode())
+    return hash_object.hexdigest()
+
+def generate_game_id(game : Game):
+    return _generate_game_id(game.Week, game.Home, game.Away)
+
+def update_week(week : dict) -> dict:
+    week["Num Games"] = len(week["Games"])
+    for game in week["Games"]:
+        if game["Success"]:
+            week["Correct"] += 1
+        else:
+            week["Incorrect"] += 1
+    return week
+
 def run(): 
     
     response = requests.get("http://sagarin.com/sports/cfsend.htm")
@@ -184,27 +226,61 @@ def run():
     #print("\nYou must win " + str(win) + " out of " + str(total) + " to profit")
     return data
 
+
 #Create list of games to add to week
 #Trying to make a function that needs to be ran once per week, on monday
 #data is a list all of the necessary data, before the game is played
 #data does not contain the game score
 def run_on_mondays():
+    prev_data = []
+    #get current data from db if it exists
+    #if it doesn't exist, create a new week
+    #if it does exist, re-evaluate the week against the new data and update the db
+
+    #get current week from db
+    gameDB = client["game-database"] #database name
+    weeks = gameDB["weeks-collection"] #collection name
+    query = {"Num": 1}
+    week = weeks.find_one(query)
+    if week == None:
+        prev_data = False
+    else:
+        prev_data = True
+    games_to_add = []
+
+
+
+
     data = run()
-    weekly_game_prediction_list = []
+    data.sort(key=lambda x: x[0][1])
+
+    week_number = 1 # scrape from vegas insider
+
     for game in data:
         #check if prediction is far enough from spread to be considered a good bet
         if game[1] > 4 or game[1] < -4:
-            weekly_game_prediction_list.append(Game(game[0][1], game[0][0], game[3], game[2], False, -1, -1))
+            games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
     
-    week_number = 1 # scrape from vegas insider
-    #Delete this weeks document to avoid duplicate
-    qeury = {"Num", week_number}
-    gameDB = client["game-database"] #database name
-    weeks = gameDB["weeks-collection"] #collection name
-    week = Week(week_number, weekly_game_prediction_list, 0, 0, len(weekly_game_prediction_list))
+    games_to_add.sort(key=lambda x: x.Home)
 
-    weeks.delete_one(qeury)
-    weeks.insert_one(week.turn_to_dict())
+    #add games to week
+    if prev_data:
+        for new_game in games_to_add:
+            existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
+            if existing_game:
+                existing_game = new_game.turn_to_dict()
+            else:
+                week["Games"].append(new_game.turn_to_dict())
+        week = update_week(week)
+        weeks.update_one(query, {"$set": week}, upsert=True)
+
+    else:
+        new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
+        new_week.update()
+        weeks.insert_one(new_week.turn_to_dict())
+
+    print("Week " + str(week_number) + " added to database")
+
 
 run_on_mondays()
 client.close()
