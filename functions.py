@@ -82,10 +82,10 @@ name_conversion = {"UMass": "Massachusetts",
                     "St. Francis (PA)": "Saint FrancisPa",
                     "North Carolina A&T": "NC AT"}
 
-#uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
+uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
 
 #URI for local testing 
-uri = "mongodb://localhost:27017/?readPreference=primary&ssl=false&retryWrites=true&w=majority&appname=NCAAFBetting"
+#uri = "mongodb://localhost:27017/?readPreference=primary&ssl=false&retryWrites=true&w=majority&appname=NCAAFBetting"
 
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
@@ -205,9 +205,9 @@ def check_html_updates():
     db = client["game-database"]
     collection = db["html_content"]
     
-    old_sagrin = collection.find({"sagrin": sagrin_content})
-    old_vegas = collection.find({"vegas": vegas_content})
-    return old_sagrin and old_vegas
+    old_sagrin = collection.find_one({"sagrin": sagrin_content})
+    old_vegas = collection.find_one({"vegas": vegas_content})
+    return old_sagrin and old_vegas  
     
     
 def run() -> list: 
@@ -257,28 +257,28 @@ def update_bets():
     if week == None:
         new_week = True
         
-        
     games_to_add = []
     for game in new_data:
         games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
     
-    games_to_add.sort(key=lambda x: x.Home)
-
+    #Shouldn't be sorted cause when we add new games below, they wont be sorted
+    #Everything will be out of order anyways so might as well let them be default
+    #games_to_add.sort(key=lambda x: x.Home)
+    
     #add games to week
-    #THIS CODE IS NOT GOOD
-    #need to find new site to get results of the games
-    #SHOULD NOT update a game in the DB if it has already been played
     if not new_week:
         for new_game in games_to_add:
             existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
             if existing_game:
+                #Not sure if this line does anything 
+                #It doesn't matter if it does or not
                 existing_game = new_game.turn_to_dict()
             else:
                 week["Games"].append(new_game.turn_to_dict())
         #week = update_week(week)
         weeks.update_one(query, {"$set": week}, upsert=True)
 
-    #THIS CODE IS GOOD
+    #Down here we also need to update the previous week with the scores, as well as success.
     else:
         new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
         #new_week.update()
