@@ -237,60 +237,51 @@ def run() -> list:
         diff = round(diff, 2)
         data.append((teams, diff, prediction/100.0, spreads[0]))
 
-
-    total = 0
-    for game in data:
-        if game[1] > 4:
-            total += 1
-        elif game[1] < -4:
-            total += 1
-
-    win = total * 110.0/210.0
-    win = math.ceil(win)
     return data
 
 
 def update_bets():
     new_data = run()
-    prev_data = []
+    new_week = False
     #get current data from db if it exists
     #if it doesn't exist, create a new week
     #if it does exist, re-evaluate the week against the new data and update the db
 
+    week_number = 1 # scrape from vegas insider
+
     #get current week from db
     gameDB = client["game-database"] #database name
     weeks = gameDB["weeks-collection"] #collection name
-    query = {"Num": 1}
+    query = {"Num": week_number}
     week = weeks.find_one(query)
     if week == None:
-        prev_data = False
-    else:
-        prev_data = True
+        new_week = True
+        
+        
     games_to_add = []
-    
-    week_number = 1 # scrape from vegas insider
-
     for game in new_data:
-        #check if prediction is far enough from spread to be considered a good bet
-        if game[1] > 4 or game[1] < -4:
-            games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
+        games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
     
     games_to_add.sort(key=lambda x: x.Home)
 
     #add games to week
-    if prev_data:
+    #THIS CODE IS NOT GOOD
+    #need to find new site to get results of the games
+    #SHOULD NOT update a game in the DB if it has already been played
+    if not new_week:
         for new_game in games_to_add:
             existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
             if existing_game:
                 existing_game = new_game.turn_to_dict()
             else:
                 week["Games"].append(new_game.turn_to_dict())
-        week = update_week(week)
+        #week = update_week(week)
         weeks.update_one(query, {"$set": week}, upsert=True)
 
+    #THIS CODE IS GOOD
     else:
         new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
-        new_week.update()
+        #new_week.update()
         weeks.insert_one(new_week.turn_to_dict())
 
     print("Week " + str(week_number) + " added to database")
@@ -306,6 +297,7 @@ def update_html():
 
     db = client["game-database"]
     collection = db["html_content"]
+    collection.delete_many({})
     collection.insert_one({"sagrin": sagrin_content})
     collection.insert_one({"vegas": vegas_content})
     print("HTML updated")
