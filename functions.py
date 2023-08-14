@@ -81,11 +81,38 @@ name_conversion = {"UMass": "Massachusetts",
                     "UCF": "Central FloridaUCF",
                     "St. Francis (PA)": "Saint FrancisPa",
                     "North Carolina A&T": "NC AT"}
+vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
+                              "UMass": "Massachusetts",
+                              "New Mexico State": "New Mexico St.",
+                              "San Diego State": "San Diego St.",
+                              "San Jose State": "San Jose St.",
+                              "USC": "Southern California",
+                              "Florida International": "FIU",
+                              "Miami": "Miami (FL)",
+                              "Central Michigan": "Central Mich.",
+                              "Michigan State": "Michigan St.",
+                              "Fresno State": "Fresno St.",
+                              "Ohio State": "Ohio St.",
+                              "Penn State": "Penn St.",
+                              "Northern Illinois": "NIU",
+                              "Boise State": "Boise St.",
+                              "South Florida": "South Fla.",
+                              "Western Kentucky": "Western Ky.",
+                              'Texas State': "Texas St.",
+                              "Washington State": "Washington St.",
+                              "Colorado State": "Colorado St.",
+                              "Army": "Army West Point",
+                              "UL Monroe": "ULM",
+                              "Middle Tennessee": "Middle Tenn.",
+                              "Northwestern State": "Northwestern St.",
+                              "Oregon State": "Oregon St.",
+                              "Florida State": "Florida St."}
 
-#uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
+
+uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
 
 #URI for local testing 
-uri = "mongodb://localhost:27017/?readPreference=primary&ssl=false&retryWrites=true&w=majority&appname=NCAAFBetting"
+#uri = "mongodb://localhost:27017/?readPreference=primary&ssl=false&retryWrites=true&w=majority&appname=NCAAFBetting"
 
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
@@ -205,11 +232,36 @@ def check_html_updates():
     db = client["game-database"]
     collection = db["html_content"]
     
-    old_sagrin = collection.find({"sagrin": sagrin_content})
-    old_vegas = collection.find({"vegas": vegas_content})
-    return old_sagrin and old_vegas
+    old_sagrin = collection.find_one({"sagrin": sagrin_content})
+    old_vegas = collection.find_one({"vegas": vegas_content})
+    return old_sagrin and old_vegas  
     
+def find_game_scores(week_number):
+    url = 'https://www.ncaa.com/scoreboard/football/fbs/2023/' + '{:02d}'.format(week_number) + '/all-conf'
+    response = requests.get(url)
     
+    soup = BeautifulSoup(response.content, 'html.parser')
+    game_teams_ul_tags = soup.find_all('ul', class_='gamePod-game-teams')
+        
+    teams_and_scores = {}
+        
+    for ul_tag in game_teams_ul_tags:
+        team_li_tags = ul_tag.find_all('li')
+        team_data = []
+            
+        for li_tag in team_li_tags:
+            team_name = li_tag.find('span', class_='gamePod-game-team-name').text.strip()
+            team_score = li_tag.find('span', class_='gamePod-game-team-score').text.strip()
+            if team_score == '':
+                team_score = 0
+            team_data.append((team_name, team_score))
+        teams_and_scores[team_data[0][0]] = team_data[0][1]
+        teams_and_scores[team_data[1][0]] = team_data[1][1]
+        
+    return teams_and_scores
+    
+
+
 def run() -> list: 
     soup = scrape_sagrin()
     pre_tags = soup.find_all("pre")
@@ -237,63 +289,79 @@ def run() -> list:
         diff = round(diff, 2)
         data.append((teams, diff, prediction/100.0, spreads[0]))
 
-
-    total = 0
-    for game in data:
-        if game[1] > 4:
-            total += 1
-        elif game[1] < -4:
-            total += 1
-
-    win = total * 110.0/210.0
-    win = math.ceil(win)
     return data
 
 
 def update_bets():
     new_data = run()
-    prev_data = []
+    new_week = False
     #get current data from db if it exists
     #if it doesn't exist, create a new week
     #if it does exist, re-evaluate the week against the new data and update the db
+    soup = scrape_vegas_insider()
+    header_h2_text = soup.select('header.module-header.justified.flex-wrapped h2')
+    text = header_h2_text[0].get_text()
 
+    # Use regular expressions to extract the number from the text
+    match = re.search(r'\d+', text)
+    week_number = int(match.group())
+   
     #get current week from db
     gameDB = client["game-database"] #database name
     weeks = gameDB["weeks-collection"] #collection name
-    query = {"Num": 1}
+    query = {"Num": week_number}
     week = weeks.find_one(query)
     if week == None:
-        prev_data = False
-    else:
-        prev_data = True
+        new_week = True
+        
     games_to_add = []
-    
-    week_number = 1 # scrape from vegas insider
-
     for game in new_data:
-        #check if prediction is far enough from spread to be considered a good bet
-        if game[1] > 4 or game[1] < -4:
-            games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
+        games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
     
-    games_to_add.sort(key=lambda x: x.Home)
-
+    #Shouldn't be sorted cause when we add new games below, they wont be sorted
+    #Everything will be out of order anyways so might as well let them be default
+    #games_to_add.sort(key=lambda x: x.Home)
+    
     #add games to week
-    if prev_data:
+    if not new_week:
         for new_game in games_to_add:
             existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
             if existing_game:
+                #Not sure if this line does anything 
+                #It doesn't matter if it does or not
                 existing_game = new_game.turn_to_dict()
             else:
                 week["Games"].append(new_game.turn_to_dict())
-        week = update_week(week)
+        week["Num Games"] = len(games_to_add)
         weeks.update_one(query, {"$set": week}, upsert=True)
+        print("Week " + str(week_number) + " updated in database")
 
     else:
         new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
-        new_week.update()
         weeks.insert_one(new_week.turn_to_dict())
-
-    print("Week " + str(week_number) + " added to database")
+        print("Week " + str(week_number) + " added to database")
+        if week_number > 1:
+            week = weeks.find_one({"Num": week_number - 1})
+            last_weeks_games = week["Games"]
+            game_scores = find_game_scores(week_number - 1)
+            for game in last_weeks_games:
+                home_team = game['Home']
+                away_team = game['Away']
+                if home_team in vegas_NCAA_name_conversion:
+                    home_team = vegas_NCAA_name_conversion[home_team]
+                if away_team in vegas_NCAA_name_conversion:
+                    away_team = vegas_NCAA_name_conversion[away_team]
+                away_score = game_scores[away_team]
+                home_score = game_scores[home_team]
+                game["Away Score"] = away_score
+                game['Home Score'] = home_score
+                if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
+                    game["Success"] = True
+                elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
+                    game["Success"] = True
+                else: 
+                    game["Success"] = False
+            weeks.update_one({"Num": week_number - 1}, {"$set": {"Games": last_weeks_games}})
 
 
 def update_html():
@@ -306,7 +374,9 @@ def update_html():
 
     db = client["game-database"]
     collection = db["html_content"]
-    collection.insert_one({"sagrin": sagrin_content, "vegas": vegas_content})
+    collection.delete_many({})
+    collection.insert_one({"sagrin": sagrin_content})
+    collection.insert_one({"vegas": vegas_content})
     print("HTML updated")
 
 
