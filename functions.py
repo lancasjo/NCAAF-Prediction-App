@@ -81,6 +81,33 @@ name_conversion = {"UMass": "Massachusetts",
                     "UCF": "Central FloridaUCF",
                     "St. Francis (PA)": "Saint FrancisPa",
                     "North Carolina A&T": "NC AT"}
+vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
+                              "UMass": "Massachusetts",
+                              "New Mexico State": "New Mexico St.",
+                              "San Diego State": "San Diego St.",
+                              "San Jose State": "San Jose St.",
+                              "USC": "Southern California",
+                              "Florida International": "FIU",
+                              "Miami": "Miami (FL)",
+                              "Central Michigan": "Central Mich.",
+                              "Michigan State": "Michigan St.",
+                              "Fresno State": "Fresno St.",
+                              "Ohio State": "Ohio St.",
+                              "Penn State": "Penn St.",
+                              "Northern Illinois": "NIU",
+                              "Boise State": "Boise St.",
+                              "South Florida": "South Fla.",
+                              "Western Kentucky": "Western Ky.",
+                              'Texas State': "Texas St.",
+                              "Washington State": "Washington St.",
+                              "Colorado State": "Colorado St.",
+                              "Army": "Army West Point",
+                              "UL Monroe": "ULM",
+                              "Middle Tennessee": "Middle Tenn.",
+                              "Northwestern State": "Northwestern St.",
+                              "Oregon State": "Oregon St.",
+                              "Florida State": "Florida St."}
+
 
 uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
 
@@ -209,7 +236,32 @@ def check_html_updates():
     old_vegas = collection.find_one({"vegas": vegas_content})
     return old_sagrin and old_vegas  
     
+def find_game_scores(week_number):
+    url = 'https://www.ncaa.com/scoreboard/football/fbs/2023/' + '{:02d}'.format(week_number) + '/all-conf'
+    response = requests.get(url)
     
+    soup = BeautifulSoup(response.content, 'html.parser')
+    game_teams_ul_tags = soup.find_all('ul', class_='gamePod-game-teams')
+        
+    teams_and_scores = {}
+        
+    for ul_tag in game_teams_ul_tags:
+        team_li_tags = ul_tag.find_all('li')
+        team_data = []
+            
+        for li_tag in team_li_tags:
+            team_name = li_tag.find('span', class_='gamePod-game-team-name').text.strip()
+            team_score = li_tag.find('span', class_='gamePod-game-team-score').text.strip()
+            if team_score == '':
+                team_score = 0
+            team_data.append((team_name, team_score))
+        teams_and_scores[team_data[0][0]] = team_data[0][1]
+        teams_and_scores[team_data[1][0]] = team_data[1][1]
+        
+    return teams_and_scores
+    
+
+
 def run() -> list: 
     soup = scrape_sagrin()
     pre_tags = soup.find_all("pre")
@@ -280,19 +332,36 @@ def update_bets():
                 existing_game = new_game.turn_to_dict()
             else:
                 week["Games"].append(new_game.turn_to_dict())
-        #week = update_week(week)
-        week["Num"] = len(games_to_add)
+        week["Num Games"] = len(games_to_add)
         weeks.update_one(query, {"$set": week}, upsert=True)
         print("Week " + str(week_number) + " updated in database")
 
-
-    #Down here we also need to update the previous week with the scores, as well as success.
     else:
         new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
-        #new_week.update()
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
-
+        if week_number > 1:
+            week = weeks.find_one({"Num": week_number - 1})
+            last_weeks_games = week["Games"]
+            game_scores = find_game_scores(week_number - 1)
+            for game in last_weeks_games:
+                home_team = game['Home']
+                away_team = game['Away']
+                if home_team in vegas_NCAA_name_conversion:
+                    home_team = vegas_NCAA_name_conversion[home_team]
+                if away_team in vegas_NCAA_name_conversion:
+                    away_team = vegas_NCAA_name_conversion[away_team]
+                away_score = game_scores[away_team]
+                home_score = game_scores[home_team]
+                game["Away Score"] = away_score
+                game['Home Score'] = home_score
+                if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
+                    game["Success"] = True
+                elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
+                    game["Success"] = True
+                else: 
+                    game["Success"] = False
+            weeks.update_one({"Num": week_number - 1}, {"$set": {"Games": last_weeks_games}})
 
 
 def update_html():
