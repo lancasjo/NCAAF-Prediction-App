@@ -341,6 +341,8 @@ def update_bets():
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
+            correct = 0
+            incorrect = 0
             week = weeks.find_one({"Num": week_number - 1})
             last_weeks_games = week["Games"]
             game_scores = find_game_scores(week_number - 1)
@@ -357,11 +359,15 @@ def update_bets():
                 game['Home Score'] = home_score
                 if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
                     game["Success"] = True
+                    correct += 1
                 elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
                     game["Success"] = True
+                    correct += 1
                 else: 
                     game["Success"] = False
+                    incorrect += 1
             weeks.update_one({"Num": week_number - 1}, {"$set": {"Games": last_weeks_games}})
+            weeks.update_one({"Num": week_number - 1}, {"$set": {"Correct": correct}}, {"$set": {"Incorrect": incorrect}})
 
 
 def update_html():
