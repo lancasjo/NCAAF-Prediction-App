@@ -326,11 +326,9 @@ def update_bets():
     if not new_week:
         for new_game in games_to_add:
             existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
-            if existing_game:
-                #Not sure if this line does anything 
-                #It doesn't matter if it does or not
-                existing_game = new_game.turn_to_dict()
-            else:
+            if existing_game:                                                                           #if game already in db update it with new data
+                existing_game = new_game.turn_to_dict() 
+            else:                                                                                       #if game not in db add it to the db
                 week["Games"].append(new_game.turn_to_dict())
         week["Num Games"] = len(games_to_add)
         weeks.update_one(query, {"$set": week}, upsert=True)
