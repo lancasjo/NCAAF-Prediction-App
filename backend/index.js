@@ -1,15 +1,14 @@
 const express = require('express');
 const MongoClient = require('mongodb').MongoClient;
-
 const app = express();
 const port = 3000; // Choose a port number
 
 const uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority";
-
+const client = new MongoClient(uri);
 
 app.get('/api/data', async (req, res) => {
     try {
-      const client = new MongoClient(uri);
+
       await client.connect();
   
       const database = client.db('game-database'); // Replace with your database name
