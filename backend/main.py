@@ -1,4 +1,4 @@
-import backend.functions as functions
+import functions
 
 all_is_good = functions.check_html_updates()
 
