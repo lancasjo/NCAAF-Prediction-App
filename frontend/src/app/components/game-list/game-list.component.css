@@ -1,0 +1,127 @@
+/* Reset some default styles */
+body, h1, h2, h3, p, ul, li {
+    margin: 0;
+    padding: 0;
+}
+
+/* Set a base font and background color */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f8f8;
+}
+
+/* Style for the week container */
+.week-container {
+    margin: 20px auto;
+    max-width: 800px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Style for each game container */
+.game-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.game-container.success {
+    background-color: #d9f7d5;
+}
+
+.game-container.error {
+    background-color: #f7d5d5;
+}
+
+.game-container.not-played {
+    background-color: #cce0ff;
+}
+
+/* Style for game information */
+.game-info {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.game-info p {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+/* Style for game scores */
+.game-container .game-score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 10px;
+    background-color: #f2f2f2;
+}
+
+.game-container .game-score p.score {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 5px 0;
+}
+a{
+    width: 100%;
+    text-decoration: none; /* Remove underline */
+    color: #333;
+}
+a:hover{
+    cursor: pointer;
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+    .week-container {
+        padding: 10px;
+    }
+    
+    .game-container {
+        flex-direction: column;
+    }
+    
+    .game-info {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .game-score {
+        align-items: center;
+    }
+}
+
+/* ... (previous styles) ... */
+
+/* ... (previous styles) ... */
+
+/* Style for game summary */
+.summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+.week-summary {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    margin: 0;
+    color: #333;
+}
+
+
+

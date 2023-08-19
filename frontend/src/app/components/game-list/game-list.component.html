@@ -1,0 +1,25 @@
+<div *ngFor="let week of weeks" class="week-container">
+    <div class="summary">
+        <div class="week-summary">
+            <p>Week {{ week.Num }}</p>
+            <p>Correct: {{ week.Correct }}</p>
+            <p>Incorrect: {{ week.Incorrect }}</p>
+            <p>Total Games: {{ week.Games.length }}</p>
+        </div>
+    </div>
+    <div *ngFor="let game of week.Games" class="game-container"
+        [ngClass]="{'success': game.Success, 'not-played': game['Away Score'] <= 0 && game['Home Score'] <= 0, 'error': !game.Success}">
+        <a class="game-container" [href]="generateGoogleSearchLink(game)" target="_blank">
+            <div class="game-info">
+                <p>Away: {{ game.Away }}</p>
+                <p>Home: {{ game.Home }}</p>
+                <p>Spread: {{ game.Spread }}</p>
+                <p>Prediction: {{ game.Prediction }}</p>
+            </div>
+            <div class="game-score">
+                <p class="score">Away: {{ game['Away Score'] < 0 ? 0 : game['Away Score'] }}</p>
+                        <p class="score">Home: {{ game['Home Score'] < 0 ? 0 : game['Home Score'] }}</p>
+            </div>
+        </a>
+    </div>
+</div>
