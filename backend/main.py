@@ -7,4 +7,5 @@ if not all_is_good:
     functions.update_db()
 else:
     print("All is good")
-    
+
+functions.update_db()

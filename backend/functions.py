@@ -68,7 +68,7 @@ class Week:
             else:
                 self.Incorrect += 1
         
-    
+#vegas to sagrin
 name_conversion = {"UMass": "Massachusetts",
                     "USC": "Southern California",
                     "Florida International": "Fla International",
@@ -80,7 +80,9 @@ name_conversion = {"UMass": "Massachusetts",
                     "UL Monroe": "LouisianaMonroeULM",
                     "UCF": "Central FloridaUCF",
                     "St. Francis (PA)": "Saint FrancisPa",
-                    "North Carolina A&T": "NC AT"}
+                    "North Carolina A&T": "NC AT",
+                    "Sam Houston": "Sam Houston State"}
+
 vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
                               "UMass": "Massachusetts",
                               "New Mexico State": "New Mexico St.",
@@ -106,7 +108,11 @@ vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
                               "Middle Tennessee": "Middle Tenn.",
                               "Northwestern State": "Northwestern St.",
                               "Oregon State": "Oregon St.",
-                              "Florida State": "Florida St."}
+                              "Florida State": "Florida St.",
+                              "Kent State": "Kent St.",
+                              "Arkansas State": "Arkansas St.",
+                              "Ball State": "Ball St.",
+                              "Utah State": "Utah St."}
 
 
 uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
@@ -316,22 +322,15 @@ def update_bets():
         
     games_to_add = []
     for game in new_data:
-        games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, -1, -1))
-    
-    #Shouldn't be sorted cause when we add new games below, they wont be sorted
-    #Everything will be out of order anyways so might as well let them be default
-    #games_to_add.sort(key=lambda x: x.Home)
-    
-    #add games to week
+        games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0).turn_to_dict())
+        
     if not new_week:
-        for new_game in games_to_add:
-            existing_game = next((game for game in week["Games"] if game["_id"] == new_game._id), None)
-            if existing_game:                                                                           #if game already in db update it with new data
-                existing_game = new_game.turn_to_dict() 
-            else:                                                                                       #if game not in db add it to the db
-                week["Games"].append(new_game.turn_to_dict())
+        
         week["Num Games"] = len(games_to_add)
-        weeks.update_one(query, {"$set": week}, upsert=True)
+        weeks.update_one(query, {"$set": {"Num Games": len(games_to_add)}})
+        weeks.update_one(query, {"$set": {"Games": games_to_add}})
+
+        update_scores(week_number)
         print("Week " + str(week_number) + " updated in database")
 
     else:
@@ -339,35 +338,42 @@ def update_bets():
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
-            correct = 0
-            incorrect = 0
-            week = weeks.find_one({"Num": week_number - 1})
-            last_weeks_games = week["Games"]
-            game_scores = find_game_scores(week_number - 1)
-            for game in last_weeks_games:
-                home_team = game['Home']
-                away_team = game['Away']
-                if home_team in vegas_NCAA_name_conversion:
-                    home_team = vegas_NCAA_name_conversion[home_team]
-                if away_team in vegas_NCAA_name_conversion:
-                    away_team = vegas_NCAA_name_conversion[away_team]
-                away_score = game_scores[away_team]
-                home_score = game_scores[home_team]
-                game["Away Score"] = away_score
-                game['Home Score'] = home_score
-                if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
-                    game["Success"] = True
-                    correct += 1
-                elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
-                    game["Success"] = True
-                    correct += 1
-                else: 
-                    game["Success"] = False
-                    incorrect += 1
-            weeks.update_one({"Num": week_number - 1}, {"$set": {"Games": last_weeks_games}})
-            weeks.update_one({"Num": week_number - 1}, {"$set": {"Correct": correct}}, {"$set": {"Incorrect": incorrect}})
+            update_scores(week_number - 1)
+            
 
-
+def update_scores(week_number):
+    gameDB = client["game-database"] #database name
+    weeks = gameDB["weeks-collection"] #collection name
+    week = weeks.find_one({"Num": week_number})
+ 
+    correct = 0
+    incorrect = 0
+    last_weeks_games = week["Games"]
+    game_scores = find_game_scores(week_number)
+    for game in last_weeks_games:
+        home_team = game['Home']
+        away_team = game['Away']
+        if home_team in vegas_NCAA_name_conversion:
+            home_team = vegas_NCAA_name_conversion[home_team]
+        if away_team in vegas_NCAA_name_conversion:
+            away_team = vegas_NCAA_name_conversion[away_team]
+        away_score = game_scores[away_team]
+        home_score = game_scores[home_team]
+        game["Away Score"] = away_score
+        game['Home Score'] = home_score
+        if home_score != 0 or away_score != 0:
+            if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
+                game["Success"] = True
+                correct += 1
+            elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
+                game["Success"] = True
+                correct += 1
+            else: 
+                game["Success"] = False
+                incorrect += 1
+    weeks.update_one({"Num": week_number}, {"$set": {"Games": last_weeks_games}})
+    weeks.update_one({"Num": week_number}, {"$set": {"Correct": correct}})
+    weeks.update_one({"Num": week_number}, {"$set": {"Incorrect": incorrect}})
 def update_html():
     soup = scrape_sagrin()
     pre_tags = soup.find_all("pre")
@@ -385,8 +391,8 @@ def update_html():
 
 
 def update_db():
-    update_html()
     update_bets()
+    update_html()
     print("Database updated")
 
 
