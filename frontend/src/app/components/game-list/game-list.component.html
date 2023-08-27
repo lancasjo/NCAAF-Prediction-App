@@ -1,13 +1,20 @@
-<div *ngFor="let week of weeks" class="week-container">
+<div class="week-selector">
+    <button *ngFor="let week of weeks" (click)="selectWeek(week)" [class.selected]="week === selectedWeek">
+        {{ week.Num }}
+    </button>
+</div>
+
+
+<div class="week-container">
     <div class="summary">
         <div class="week-summary">
-            <p>Week {{ week.Num }}</p>
-            <p>Correct: {{ week.Correct }}</p>
-            <p>Incorrect: {{ week.Incorrect }}</p>
-            <p>Total Games: {{ week.Games.length }}</p>
+            <p>Week {{ selectedWeek.Num }}</p>
+            <p>Correct: {{ selectedWeek.Correct }}</p>
+            <p>Incorrect: {{ selectedWeek.Incorrect }}</p>
+            <p>Total Games: {{ selectedWeek.Games.length }}</p>
         </div>
     </div>
-    <div *ngFor="let game of week.Games" class="game-container"
+    <div *ngFor="let game of selectedWeek.Games" class="game-container"
         [ngClass]="{'success': game.Success, 'not-played': game['Away Score'] <= 0 && game['Home Score'] <= 0, 'error': !game.Success}">
         <a class="game-container" [href]="generateGoogleSearchLink(game)" target="_blank">
             <div class="game-info">

@@ -10,20 +10,29 @@ import { Game } from './game.model'; // Import the Game type from the separate f
 })
 export class GameListComponent implements OnInit {
   weeks: any[] = [];
+  selectedWeek: any;
 
   constructor(private gameService: GameService) { }
 
   ngOnInit(): void {
     this.gameService.getGames().subscribe(data => {
-      console.log(data);
       this.weeks = data;
       this.weeks.forEach(week => {
         week.Games = week.Games.filter((game: Game) => {
           game.Prediction = Math.round(game.Prediction)
           return this.difference(game.Prediction, game.Spread) > 4
         })
+        week.Correct = week.Games.filter((game: any) => game.Success).length;
+        week.Incorrect = week.Games.filter((game: any) => !game.Success && !(game['Away Score'] <= 0 && game['Home Score'] <= 0)).length;
       });
+      this.selectedWeek = this.weeks[0];
+      console.log(this.weeks);
     });
+
+
+  }
+  selectWeek(week: any) {
+    this.selectedWeek = week;
   }
   difference(prediction: number, spread: number): number {
     return Math.abs(prediction - spread);

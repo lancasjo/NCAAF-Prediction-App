@@ -1,5 +1,11 @@
 /* Reset some default styles */
-body, h1, h2, h3, p, ul, li {
+body,
+h1,
+h2,
+h3,
+p,
+ul,
+li {
     margin: 0;
     padding: 0;
 }
@@ -69,12 +75,15 @@ body {
     color: #333;
     margin: 5px 0;
 }
-a{
+
+a {
     width: 100%;
-    text-decoration: none; /* Remove underline */
+    text-decoration: none;
+    /* Remove underline */
     color: #333;
 }
-a:hover{
+
+a:hover {
     cursor: pointer;
 }
 
@@ -83,16 +92,16 @@ a:hover{
     .week-container {
         padding: 10px;
     }
-    
+
     .game-container {
         flex-direction: column;
     }
-    
+
     .game-info {
         margin-right: 0;
         margin-bottom: 10px;
     }
-    
+
     .game-score {
         align-items: center;
     }
@@ -123,5 +132,30 @@ a:hover{
     color: #333;
 }
 
+/* Styling for the week selector */
+.week-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
 
+.week-selector button {
+    background-color: #f5f5f5;
+    color: #333;
+    border: none;
+    padding: 8px 16px;
+    margin: 0 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
 
+.week-selector button.selected {
+    background-color: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.week-selector button:hover {
+    background-color: #0056b3;
+}

@@ -260,10 +260,8 @@ def find_game_scores(week_number):
             team_score = li_tag.find('span', class_='gamePod-game-team-score').text.strip()
             if team_score == '':
                 team_score = 0
-            team_data.append((team_name, team_score))
-        teams_and_scores[team_data[0][0]] = team_data[0][1]
-        teams_and_scores[team_data[1][0]] = team_data[1][1]
-        
+            team_data.append((team_name, int(team_score)))
+        teams_and_scores[(team_data[0][0], team_data[1][0])] = (team_data[0][1], team_data[1][1])
     return teams_and_scores
     
 
@@ -321,20 +319,24 @@ def update_bets():
         new_week = True
         
     games_to_add = []
+    old_games = week["Games"]
     for game in new_data:
-        games_to_add.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0).turn_to_dict())
+        new_game = Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0)
+        if not any(g["_id"] == generate_game_id(new_game) for g in old_games):
+            print("BRHU")
+            games_to_add.append(new_game.turn_to_dict())
         
     if not new_week:
         
         week["Num Games"] = len(games_to_add)
         weeks.update_one(query, {"$set": {"Num Games": len(games_to_add)}})
-        weeks.update_one(query, {"$set": {"Games": games_to_add}})
+        weeks.update_one(query, {"$set": {"Games": old_games}})
 
         update_scores(week_number)
         print("Week " + str(week_number) + " updated in database")
 
     else:
-        new_week = Week(week_number, games_to_add, 0, 0, len(games_to_add))
+        new_week = Week(week_number, games_to_add, 0, 0, len(new_data))
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
@@ -357,15 +359,18 @@ def update_scores(week_number):
             home_team = vegas_NCAA_name_conversion[home_team]
         if away_team in vegas_NCAA_name_conversion:
             away_team = vegas_NCAA_name_conversion[away_team]
-        away_score = game_scores[away_team]
-        home_score = game_scores[home_team]
+        if (away_team, home_team) not in game_scores:
+            away_team, home_team = home_team, away_team
+        scores = game_scores[(away_team, home_team)]
+        away_score = scores[0]
+        home_score = scores[1]
         game["Away Score"] = away_score
         game['Home Score'] = home_score
         if home_score != 0 or away_score != 0:
-            if game["Prediction"] < game["Spread"] and away_score - home_score < game["Spread"]:
+            if game["Prediction"] < game["Spread"] and int(away_score) - int(home_score) < game["Spread"]:
                 game["Success"] = True
                 correct += 1
-            elif game["Prediction"] > game["Spread"] and away_score - home_score > game["Spread"]:
+            elif game["Prediction"] > game["Spread"] and int(away_score) - int(home_score) > game["Spread"]:
                 game["Success"] = True
                 correct += 1
             else: 
