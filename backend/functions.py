@@ -318,29 +318,32 @@ def update_bets():
     if week == None:
         new_week = True
         
-    games_to_add = []
-    old_games = week["Games"]
-    for game in new_data:
-        new_game = Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0)
-        if not any(g["_id"] == generate_game_id(new_game) for g in old_games):
-            print("BRHU")
-            games_to_add.append(new_game.turn_to_dict())
-        
+     
     if not new_week:
-        
-        week["Num Games"] = len(games_to_add)
-        weeks.update_one(query, {"$set": {"Num Games": len(games_to_add)}})
+        old_games = week["Games"]
+        for game in new_data:
+            new_game = Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0)
+            game_match = next((g for g in old_games if g["_id"] == generate_game_id(new_game)), None)
+            if game_match == None:
+                print("BRHU")
+                old_games.append(new_game.turn_to_dict())
+            else:
+                game_match["Spread"] = new_game.Spread
+                game_match["Prediction"] = new_game.Prediction
+        weeks.update_one(query, {"$set": {"Num Games": len(old_games)}})
         weeks.update_one(query, {"$set": {"Games": old_games}})
 
         update_scores(week_number)
         print("Week " + str(week_number) + " updated in database")
 
     else:
-        new_week = Week(week_number, games_to_add, 0, 0, len(new_data))
+        
+        new_week = Week(week_number, new_data, 0, 0, len(new_data))
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
             update_scores(week_number - 1)
+            print("Old scores updated for week", week_number - 1)
             
 
 def update_scores(week_number):
