@@ -350,6 +350,7 @@ def update_bets():
             update_scores(week_number - 1)
             print("Old scores updated for week", week_number - 1)
             
+    update_teams(week_number)
 
 def update_scores(week_number):
     gameDB = client["game-database"] #database name
@@ -405,6 +406,23 @@ def update_html():
     print("HTML updated")
 
 
+def update_teams(week_number : int):
+    gameDB = client["game-database"] #database name
+    weeks = gameDB["weeks-collection"] #collection name
+    query = {"Num": week_number}
+    week = weeks.find_one(query)
+    games = week["Games"]
+    teams = gameDB["teams-collection"].find([])
+    for game in games:
+        if game["Home"] not in teams:
+            gameDB["teams-collection"].insert_one({"Team": game["Home"], "Games": []})
+        if game["Away"] not in teams:
+            gameDB["teams-collection"].insert_one({"Team": game["Away"], "Games": []})
+        teams[game["Home"]]["Games"].append(game)
+        teams[game["Away"]]["Games"].append(game)
+    for team in teams:
+        gameDB["teams-collection"].update_one({"Team": team["Team"]}, {"$set": {"Games": team["Games"]}})
+    print("Teams updated")
 def update_db():
     update_bets()
     update_html()
@@ -433,7 +451,8 @@ def onChange():
 
 
 ### END FUNCTION DEFINITIONS ###
-#Database schema
+### Database Schema ###
+# week-collection
 # {
 #    Week : int
 #    {
@@ -456,3 +475,25 @@ def onChange():
 # Is there a double counting issue here? NO!!
 # There is a world where each team has a unique id in a seperate collection and relationships are established that way. Not that I see
 # This way someone could look up a team and see all of their games instead of by week. Second DB, or could be done efficiently with queries
+#
+# html_content
+# {
+#   sagrin : string
+#   vegas : string
+# }
+#
+#
+# team-collection
+# {
+#   Team : string
+#   Games : [Game]
+# }
+#
+# conference-collection
+# {
+#   Conference : string
+#   Games : [Game]
+# }
+#
+
+    
