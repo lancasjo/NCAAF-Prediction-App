@@ -10,6 +10,6 @@ export class GameService {
   constructor(private http: HttpClient) { }
 
   getGames(): Observable<any[]> {
-    return this.http.get<any[]>('http://127.0.0.1:3000/api/data');
+    return this.http.get<any[]>('https://api.ncaaf-betting.papadman.app/api/data');
   }
 }

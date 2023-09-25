@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let data = []; // Initialize the API data to an empty array
 
     // Fetch game data from JSON file
-    fetch("http://127.0.0.1:3000/api/data")
+    fetch("http://api.ncaaf-betting.papadman.app/api/data")
         .then(response => response.json())
         .then(api_data => {
             data = api_data;
