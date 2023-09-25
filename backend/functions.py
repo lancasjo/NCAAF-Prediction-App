@@ -412,16 +412,27 @@ def update_teams(week_number : int):
     query = {"Num": week_number}
     week = weeks.find_one(query)
     games = week["Games"]
-    teams = gameDB["teams-collection"].find([])
+    teams = gameDB["teams-collection"]
     for game in games:
-        if game["Home"] not in teams:
+        hteam = teams.find_one({"Team": game["Home"]})
+        ateam = teams.find_one({"Team": game["Away"]})
+        if hteam is None:
             gameDB["teams-collection"].insert_one({"Team": game["Home"], "Games": []})
-        if game["Away"] not in teams:
+            hteam = teams.find_one({"Team": game["Home"]})
+        if ateam is None:
             gameDB["teams-collection"].insert_one({"Team": game["Away"], "Games": []})
-        teams[game["Home"]]["Games"].append(game)
-        teams[game["Away"]]["Games"].append(game)
-    for team in teams:
-        gameDB["teams-collection"].update_one({"Team": team["Team"]}, {"$set": {"Games": team["Games"]}})
+            ateam = teams.find_one({"Team": game["Away"]})
+        
+        hgames : list = hteam["Games"]
+        agames : list = ateam["Games"]
+        while (len(hgames) < week_number):
+            hgames.append(None)
+        while (len(agames) < week_number):
+            agames.append(None)
+        hgames[week_number - 1] = game
+        agames[week_number - 1] = game
+        gameDB["teams-collection"].update_one({"Team": game["Home"]}, {"$set": {"Games": hgames}})
+        gameDB["teams-collection"].update_one({"Team": game["Away"]}, {"$set": {"Games": agames}})
     print("Teams updated")
 def update_db():
     update_bets()
