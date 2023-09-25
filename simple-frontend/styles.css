@@ -1,0 +1,123 @@
+/* Reset some default styles */
+body, h1 {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Text color */
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    text-align: center;
+    padding: 20px;
+}
+
+/* Style for week containers */
+.week {
+    background-color: #444; /* Week container background color */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Drop shadow effect */
+    margin: 20px auto;
+    padding: 15px;
+}
+
+.week p {
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+}
+
+.games-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Create a flexible grid layout */
+    grid-gap: 20px; /* Add space between grid items */
+}
+
+/* Style for game containers */
+.game {
+    /*background-color: #555; /* Game container background color */
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #666;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Drop shadow effect */
+}
+
+.game_success {
+    background-color: #00ff00; /* Game container background color */
+}
+
+.game_fail {
+    background-color: #ff0000; /* Game container background color */
+}
+
+.game p {
+    margin: 0;
+    padding: 5px 0;
+}
+
+/* Add these styles for centering game info and left/right aligning scores */
+/* Center-align game info (team names) */
+.game-info {
+    text-align: center;
+    font-size: 18px; /* Increase font size for team names */
+}
+
+/* Style for game scores */
+.bet-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+.spread{
+    flex: 1;
+    text-align: center;
+}
+.algo {
+    flex: 1;
+    text-align: center;
+}
+
+
+.scores {
+    display: flex; /* Use flexbox to align scores */
+    justify-content: space-between; /* Space-between to push scores apart */
+    font-size: 24px; /* Increase font size for scores */
+}
+
+/* Style for away and home scores */
+.away-score {
+    flex: 1; /* Equal space for both scores */
+    text-align: right; /* Align away score to the left */
+    padding-right: 25%;
+}
+
+.home-score {
+    flex: 1; /* Equal space for both scores */
+    text-align: left; /* Align home score to the right */
+    padding-left: 25%;
+}
+
+/* Add styles for tab navigation */
+.tabs {
+    margin: auto;
+    width: 50%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    background-color: #444;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+}
+
+.tab-btn.active {
+    background-color: #555;
+}

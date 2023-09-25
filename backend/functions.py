@@ -68,51 +68,47 @@ class Week:
             else:
                 self.Incorrect += 1
         
-#vegas to sagrin
-name_conversion = {"UMass": "Massachusetts",
+#convert all names to a standard format
+name_conversion = { "UMass": "Massachusetts",
                     "USC": "Southern California",
-                    "Florida International": "Fla International",
+                    "Fla International": "Florida International",
+                    "FIU": "Florida International",
                     "UConn": "Connecticut",
-                    "Miami (OH)": "MiamiOhio",
-                    "Miami": "MiamiFlorida",
-                    "Texas A&M": "Texas AM",
+                    "MiamiOhio" : "Miami (OH)",
+                    "MiamiFlorida": "Miami (FL)",
+                    "Miami": "Miami (FL)",
+                    "Texas AM": "Texas A&M",
+                    "Mississippi": "Ole Miss",
                     "Army": "Army West Point",
-                    "UL Monroe": "LouisianaMonroeULM",
+                    "LouisianaMonroeULM": "UL Monroe",
                     "UCF": "Central FloridaUCF",
-                    "St. Francis (PA)": "Saint FrancisPa",
-                    "North Carolina A&T": "NC AT",
-                    "Sam Houston": "Sam Houston State"}
+                    "Saint FrancisPa": "St. Francis (PA)",
+                    "NC AT" : "North Carolina A&T",
+                    "Sam Houston": "Sam Houston State",
+                    "NIU": "Northern Illinois",
+                    "Southern Miss": "Southern Mississippi",
+                    "Southern Miss.": "Southern Mississippi",
+                    "App State": "Appalachian State",
+                    }
 
-vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
-                              "UMass": "Massachusetts",
-                              "New Mexico State": "New Mexico St.",
-                              "San Diego State": "San Diego St.",
-                              "San Jose State": "San Jose St.",
-                              "USC": "Southern California",
-                              "Florida International": "FIU",
-                              "Miami": "Miami (FL)",
-                              "Central Michigan": "Central Mich.",
-                              "Michigan State": "Michigan St.",
-                              "Fresno State": "Fresno St.",
-                              "Ohio State": "Ohio St.",
-                              "Penn State": "Penn St.",
-                              "Northern Illinois": "NIU",
-                              "Boise State": "Boise St.",
-                              "South Florida": "South Fla.",
-                              "Western Kentucky": "Western Ky.",
-                              'Texas State': "Texas St.",
-                              "Washington State": "Washington St.",
-                              "Colorado State": "Colorado St.",
-                              "Army": "Army West Point",
-                              "UL Monroe": "ULM",
-                              "Middle Tennessee": "Middle Tenn.",
-                              "Northwestern State": "Northwestern St.",
-                              "Oregon State": "Oregon St.",
-                              "Florida State": "Florida St.",
-                              "Kent State": "Kent St.",
-                              "Arkansas State": "Arkansas St.",
-                              "Ball State": "Ball St.",
-                              "Utah State": "Utah St."}
+#standardize all naming conventions to sagrin
+def stdname(name : str) -> str:
+    if "St." in name:
+        name = name.replace("St.", "State")
+    if "Mich." in name:
+        name = name.replace("Mich.", "Michigan")
+    if "Fla." in name:
+        name = name.replace("Fla.", "Florida")
+    if "Ky." in name:
+        name = name.replace("Ky.", "Kentucky")
+    if "Tenn." in name:
+        name = name.replace("Tenn.", "Tennessee")
+    if "Ga." in name:
+        name = name.replace("Ga.", "Georgia")
+    if name in name_conversion:
+        name = name_conversion[name]
+    return name
+
 
 
 uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
@@ -140,10 +136,8 @@ def convert_signed_string_to_number(signed_string : str):
     number = float(signed_string[1:])
     return sign * number
 
-team_scores = {}
 
-
-def extract_state_and_number(line : str):
+def extract_state_and_number(line : str) -> tuple[str, int]:
     translator = str.maketrans("", "", string.punctuation)
 
     modified_string = line.translate(translator)
@@ -155,13 +149,20 @@ def extract_state_and_number(line : str):
     
     if match:
         team = match.group(1).strip()
+        team = stdname(team)
         score = int(match.group(2))
-        team_scores[team] = score
+        return team, score
+    else:
+        return None, None
     
         
-def find_scores(list : list):
+def find_scores(list : list) -> dict:
+    team_scores = {}
     for line in list:
-        extract_state_and_number(line)
+        team, score = extract_state_and_number(line)
+        if team and score:
+            team_scores[team] = score
+    return team_scores
         
 def find_odds(tbody_tag):
     game_odds = {}
@@ -257,6 +258,7 @@ def find_game_scores(week_number):
             
         for li_tag in team_li_tags:
             team_name = li_tag.find('span', class_='gamePod-game-team-name').text.strip()
+            team_name = stdname(team_name)
             team_score = li_tag.find('span', class_='gamePod-game-team-score').text.strip()
             if team_score == '':
                 team_score = 0
@@ -271,7 +273,7 @@ def run() -> list:
     pre_tags = soup.find_all("pre")
     html_content = pre_tags[2].get_text()
     teams = html_content.splitlines()
-    find_scores(teams)
+    team_scores = find_scores(teams)
 
     soup = scrape_vegas_insider()
     tbody_tag = soup.find("tbody", id="odds-table-spread--0")
@@ -280,18 +282,18 @@ def run() -> list:
     data = []
 
     for teams, spreads in game_odds.items():
-        away = teams[0]
-        home = teams[1]
+        away = stdname(teams[0])
+        home = stdname(teams[1])
         if away not in team_scores:
-            away = name_conversion[away]
+            print(away + " not found. Needs name conversion")
         if home not in team_scores:
-            home = name_conversion[home]
+            print(home + " not found. Needs name conversion")
         prediction = team_scores[away] - team_scores[home] - 500
         
         
         diff = prediction/100.0 - spreads[0]
         diff = round(diff, 2)
-        data.append((teams, diff, prediction/100.0, spreads[0]))
+        data.append(((away, home), diff, prediction/100.0, spreads[0]))
 
     return data
 
@@ -337,8 +339,11 @@ def update_bets():
         print("Week " + str(week_number) + " updated in database")
 
     else:
-        
-        new_week = Week(week_number, new_data, 0, 0, len(new_data))
+        games = []
+        for game in new_data:
+            new_game = Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0)
+            games.append(new_game)
+        new_week = Week(week_number, games, 0, 0, len(new_data))
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
@@ -355,15 +360,16 @@ def update_scores(week_number):
     incorrect = 0
     last_weeks_games = week["Games"]
     game_scores = find_game_scores(week_number)
+    dbug_game_ctr = -1
     for game in last_weeks_games:
+        dbug_game_ctr += 1
         home_team = game['Home']
         away_team = game['Away']
-        if home_team in vegas_NCAA_name_conversion:
-            home_team = vegas_NCAA_name_conversion[home_team]
-        if away_team in vegas_NCAA_name_conversion:
-            away_team = vegas_NCAA_name_conversion[away_team]
         if (away_team, home_team) not in game_scores:
             away_team, home_team = home_team, away_team
+        if (away_team, home_team) not in game_scores:
+            print("Could not find game: " + away_team + " at " + home_team + "\t\tGame idx: " + str(dbug_game_ctr))
+            continue
         scores = game_scores[(away_team, home_team)]
         away_score = scores[0]
         home_score = scores[1]
@@ -379,6 +385,7 @@ def update_scores(week_number):
             else: 
                 game["Success"] = False
                 incorrect += 1
+    #sys.exit()
     weeks.update_one({"Num": week_number}, {"$set": {"Games": last_weeks_games}})
     weeks.update_one({"Num": week_number}, {"$set": {"Correct": correct}})
     weeks.update_one({"Num": week_number}, {"$set": {"Incorrect": incorrect}})
