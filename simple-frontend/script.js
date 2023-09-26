@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let data = []; // Initialize the API data to an empty array
 
     // Fetch game data from JSON file
-    fetch("http://api.ncaaf-betting.papadman.app/api/data")
+    fetch("https://api.ncaaf-betting.papadman.app/api/data")
         .then(response => response.json())
         .then(api_data => {
             data = api_data;
@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const gameDiv = document.createElement("div");
             gameDiv.classList.add("game");
 
+            gameDiv.onclick = () => window.open(`https://www.google.com/search?q=${game["Home"]}%20vs%20${game["Away"]}%20game`, "_blank");
+            
             const gameInfo = document.createElement("p");
             gameInfo.classList.add("game-info");
             gameInfo.textContent = `${game["Home"]} Vs ${game["Away"]}`;
@@ -64,8 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
             */
             if (parseInt(game["Home Score"]) === 0 && parseInt(game["Away Score"]) === 0) {
                 //prediction phase
-                //if difference between algo and spread is greater than 4, set game to yellow
-                if (Math.abs(game["Prediction"]) > Math.abs(game["Spread"])) {
+                //if difference between algo and spread is greater than 4, set game to yellow, if not set to gray
+                if (/*xor(game["Prediction"] > game["Spread"], Math.abs(game["Prediction"]) > Math.abs(game["Spread"])) && */difference(game["Prediction"], game["Spread"]) > 4 && /*game["Prediction"] * game["Spread"] > 0*/) {
                     gameDiv.style.backgroundColor = "#ffc107";
                     gameDiv.style.borderColor = "#d8a702";
                 }
@@ -120,4 +122,13 @@ document.addEventListener("DOMContentLoaded", function () {
             tabs.appendChild(tab);
         }
     }
+
+    function difference(a, b) {
+        return Math.abs(a - b);
+    }
+
+    function xor(a, b) {
+        return (a || b) && !(a && b);
+    }
+
 });

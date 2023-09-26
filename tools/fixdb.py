@@ -5,7 +5,7 @@ import math
 import string
 import hashlib
 import sys
-sys.path.append('./')
+sys.path.append('../')
 import backend.functions as functions
 
 
