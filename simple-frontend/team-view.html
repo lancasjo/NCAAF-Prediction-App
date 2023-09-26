@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="styles.css">
+        <title>Team View</title>
+    </head>
+    <body>
+        <h1>Team View</h1>
+        <h2 href="/index.html">Game Data</h2>
+        <!--search bar for searching your team-->
+        <div id="search">
+            <input type="text" id="teamName" placeholder="Enter Team Name">
+            <button id="search-button" onclick="searchTeam()">Search</button>
+        </div>
+        <!--table for displaying team data-->
+        <div id="team-stats"></div>
+        <div id="games"></div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="team-script.js"></script>
+</html>
