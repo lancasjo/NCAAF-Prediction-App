@@ -8,4 +8,5 @@ if not all_is_good:
 else:
     print("All is good")
 
-print(len(functions.run()))
+
+

@@ -20,7 +20,7 @@ export class GameListComponent implements OnInit {
       this.weeks.forEach(week => {
         week.Games = week.Games.filter((game: Game) => {
           game.Prediction = Math.round(game.Prediction)
-          return this.difference(game.Prediction, game.Spread) > 4
+          return this.difference(game.Prediction, game.Spread) > 3 && this.difference(game.Prediction, game.Spread) < 8
         })
         week.Correct = week.Games.filter((game: any) => game.Success).length;
         week.Incorrect = week.Games.filter((game: any) => !game.Success && !(game['Away Score'] <= 0 && game['Home Score'] <= 0)).length;

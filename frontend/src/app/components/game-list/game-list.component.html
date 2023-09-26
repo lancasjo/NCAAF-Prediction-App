@@ -20,8 +20,8 @@
             <div class="game-info">
                 <p>Away: {{ game.Away }}</p>
                 <p>Home: {{ game.Home }}</p>
-                <p>Spread: {{ game.Spread }}</p>
-                <p>Prediction: {{ game.Prediction }}</p>
+                <p>Spread: {{ game.Spread > 0 ? "+" + game.Spread : game.Spread }}</p>
+                <p>Prediction: {{ game.Prediction > 0 ? "+" + game.Prediction : game.Prediction }}</p>
             </div>
             <div class="game-score">
                 <p class="score">Away: {{ game['Away Score'] < 0 ? 0 : game['Away Score'] }}</p>

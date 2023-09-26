@@ -81,7 +81,8 @@ name_conversion = {"UMass": "Massachusetts",
                     "UCF": "Central FloridaUCF",
                     "St. Francis (PA)": "Saint FrancisPa",
                     "North Carolina A&T": "NC AT",
-                    "Sam Houston": "Sam Houston State"}
+                    "Sam Houston": "Sam Houston State",
+                    "Ole Miss": "Mississippi"}
 
 vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
                               "UMass": "Massachusetts",
@@ -112,7 +113,19 @@ vegas_NCAA_name_conversion = {"Jacksonville State": "Jacksonville St.",
                               "Kent State": "Kent St.",
                               "Arkansas State": "Arkansas St.",
                               "Ball State": "Ball St.",
-                              "Utah State": "Utah St."}
+                              "Utah State": "Utah St.",
+                              "Kansas State": "Kansas St.",
+                              "Western Michigan": "Western Mich.",
+                              "Iowa State": "Iowa St.",
+                              "Appalachian State": "App State",
+                              "Florida Atlantic": "Fla. Atlantic",
+                              "Georgia Southern": "Ga. Southern",
+                              "Georgia State": "Georgia St.",
+                              "Eastern Michigan": "Eastern Mich.",
+                              "Mississippi State": "Mississippi St.",
+                              "Southern Miss": "Southern Miss.",
+                              "Arizona State": "Arizona St.",
+                              "Oklahoma State": "Oklahoma St."}
 
 
 uri = "mongodb+srv://jrlancaste:bugbugbug@sportsbetting.vqijjoh.mongodb.net/?retryWrites=true&w=majority"
@@ -337,8 +350,11 @@ def update_bets():
         print("Week " + str(week_number) + " updated in database")
 
     else:
-        
-        new_week = Week(week_number, new_data, 0, 0, len(new_data))
+        game_list = []
+        for game in new_data:
+            game_list.append(Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0))
+            
+        new_week = Week(week_number, game_list, 0, 0, len(game_list))
         weeks.insert_one(new_week.turn_to_dict())
         print("Week " + str(week_number) + " added to database")
         if week_number > 1:
@@ -350,12 +366,13 @@ def update_scores(week_number):
     gameDB = client["game-database"] #database name
     weeks = gameDB["weeks-collection"] #collection name
     week = weeks.find_one({"Num": week_number})
- 
     correct = 0
     incorrect = 0
     last_weeks_games = week["Games"]
     game_scores = find_game_scores(week_number)
     for game in last_weeks_games:
+        scores = ()
+
         home_team = game['Home']
         away_team = game['Away']
         if home_team in vegas_NCAA_name_conversion:
@@ -364,7 +381,10 @@ def update_scores(week_number):
             away_team = vegas_NCAA_name_conversion[away_team]
         if (away_team, home_team) not in game_scores:
             away_team, home_team = home_team, away_team
-        scores = game_scores[(away_team, home_team)]
+            scores = game_scores[(away_team, home_team)]
+            #away_team, home_team = home_team, away_team
+        else:
+            scores = game_scores[(away_team, home_team)]
         away_score = scores[0]
         home_score = scores[1]
         game["Away Score"] = away_score
