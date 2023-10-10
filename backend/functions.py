@@ -89,6 +89,7 @@ name_conversion = { "UMass": "Massachusetts",
                     "Southern Miss": "Southern Mississippi",
                     "Southern Miss.": "Southern Mississippi",
                     "App State": "Appalachian State",
+                    "ULM": "UL Monroe",
                     }
 
 #standardize all naming conventions to sagrin
@@ -327,7 +328,7 @@ def update_bets():
             new_game = Game(week_number, game[0][1], game[0][0], game[3], game[2], False, 0, 0)
             game_match = next((g for g in old_games if g["_id"] == generate_game_id(new_game)), None)
             if game_match == None:
-                print("BRHU")
+                print("New game found")
                 old_games.append(new_game.turn_to_dict())
             else:
                 game_match["Spread"] = new_game.Spread
@@ -368,6 +369,7 @@ def update_scores(week_number):
         if (away_team, home_team) not in game_scores:
             away_team, home_team = home_team, away_team
         if (away_team, home_team) not in game_scores:
+            away_team, home_team = home_team, away_team
             print("Could not find game: " + away_team + " at " + home_team + "\t\tGame idx: " + str(dbug_game_ctr))
             continue
         scores = game_scores[(away_team, home_team)]
