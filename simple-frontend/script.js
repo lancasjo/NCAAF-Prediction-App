@@ -73,14 +73,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             else if (game["Success"]) {
+                if (difference(game["Prediction"], game["Spread"]) > 4) {
+                    gameDiv.style.backgroundColor = "#21C021";
+                    gameDiv.style.borderColor = "#008000"
+                } else {
                 //green tint for success
                 gameDiv.style.backgroundColor = "#008000"
                 gameDiv.style.borderColor = "#006400"
+                }
             } 
             else if (!game["Success"]) {
+                if (difference(game["Prediction"], game["Spread"]) > 4) {
+                    gameDiv.style.backgroundColor = "#ff0000";
+                    gameDiv.style.borderColor = "#b52b27";
+                } else {
                 //red tint for failure
                 gameDiv.style.backgroundColor = "#b52b27";
                 gameDiv.style.borderColor = "#8c2723";
+                }
             }
 
             gamesContainer.appendChild(gameDiv);
