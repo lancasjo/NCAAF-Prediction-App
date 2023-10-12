@@ -51,8 +51,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const betInfo = document.createElement("p");
             betInfo.classList.add("bet-info");
+            game_spread = game["Spread"];
             betInfo.innerHTML = `
-                <span class="spread">Spread: ${game["Spread"]}</span>
+                <span class="spread">Spread: ${game["Spread"] > 0 ? "+" : ""}${game["Spread"]}</span>
                 <span class="algo">Algo: ${game["Prediction"]}</span>
             `;
             gameDiv.appendChild(betInfo);
@@ -67,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (parseInt(game["Home Score"]) === 0 && parseInt(game["Away Score"]) === 0) {
                 //prediction phase
                 //if difference between algo and spread is greater than 4, set game to yellow, if not set to gray
-                if (/*xor(game["Prediction"] > game["Spread"], Math.abs(game["Prediction"]) > Math.abs(game["Spread"])) && */difference(game["Prediction"], game["Spread"]) > 4 && /*game["Prediction"] * game["Spread"] > 0*/) {
+                if (difference(game["Prediction"], game["Spread"]) > 4) {
                     gameDiv.style.backgroundColor = "#ffc107";
                     gameDiv.style.borderColor = "#d8a702";
                 }
