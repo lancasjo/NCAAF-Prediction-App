@@ -51,10 +51,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const betInfo = document.createElement("p");
             betInfo.classList.add("bet-info");
-            game_spread = game["Spread"];
             betInfo.innerHTML = `
                 <span class="spread">Spread: ${game["Spread"] > 0 ? "+" : ""}${game["Spread"]}</span>
-                <span class="algo">Algo: ${game["Prediction"]}</span>
+                <span class="algo">Algo: ${game["Prediction"] > 0 ? "+" : ""}${game["Prediction"]}</span>
             `;
             gameDiv.appendChild(betInfo);
             gameDiv.style.backgroundColor = "#555";
