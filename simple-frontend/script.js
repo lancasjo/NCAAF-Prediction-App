@@ -22,19 +22,29 @@ document.addEventListener("DOMContentLoaded", function () {
         const week = weeks[weekIndex];
         const weekDiv = document.createElement("div");
         weekDiv.classList.add("week");
+        //create 2 sections, one for the games that satisfy difference(game["Prediction"], game["Spread"]) > 4 and one for the games that don't
+        //if the game satisfies the condition, add it to the first section, if not add it to the second section
 
-        //const weekNumber = document.createElement("p");
-        //weekNumber.textContent = "Week Number: " + week["Num"];
-        //weekDiv.appendChild(weekNumber);
+        const betongamesHeader = document.createElement("h2");
+        betongamesHeader.textContent = "Good Bets";
+        const betongamesContainer = document.createElement("div");
+        betongamesContainer.classList.add("games-container");
 
-        const gamesContainer = document.createElement("div");
-        gamesContainer.classList.add("games-container");
+
+        const nobetgamesHeader = document.createElement("h2");
+        nobetgamesHeader.textContent = "Other Analysis";
+        const nobetgamesContainer = document.createElement("div");
+        nobetgamesContainer.classList.add("games-container");
+
+        
+
 
         week["Games"].forEach(game => {
+            const betOnThisGame = difference(game["Prediction"], game["Spread"]) > 4;
             const gameDiv = document.createElement("div");
             gameDiv.classList.add("game");
 
-            gameDiv.onclick = () => window.open(`https://www.google.com/search?q=${game["Home"]}%20vs%20${game["Away"]}%20game`, "_blank");
+            gameDiv.onclick = () => window.open(`https://www.google.com/search?q=${game["Home"]}%20vs%20${game["Away"]}%20football%20game`, "_blank");
             
             const gameInfo = document.createElement("p");
             gameInfo.classList.add("game-info");
@@ -67,36 +77,32 @@ document.addEventListener("DOMContentLoaded", function () {
             if (parseInt(game["Home Score"]) === 0 && parseInt(game["Away Score"]) === 0) {
                 //prediction phase
                 //if difference between algo and spread is greater than 4, set game to yellow, if not set to gray
-                if (difference(game["Prediction"], game["Spread"]) > 4) {
+                if (betOnThisGame) {
                     gameDiv.style.backgroundColor = "#ffc107";
                     gameDiv.style.borderColor = "#d8a702";
                 }
             }
             else if (game["Success"]) {
-                if (difference(game["Prediction"], game["Spread"]) > 4) {
-                    gameDiv.style.backgroundColor = "#21C021";
-                    gameDiv.style.borderColor = "#008000"
-                } else {
                 //green tint for success
                 gameDiv.style.backgroundColor = "#008000"
                 gameDiv.style.borderColor = "#006400"
-                }
             } 
             else if (!game["Success"]) {
-                if (difference(game["Prediction"], game["Spread"]) > 4) {
-                    gameDiv.style.backgroundColor = "#ff0000";
-                    gameDiv.style.borderColor = "#b52b27";
-                } else {
                 //red tint for failure
                 gameDiv.style.backgroundColor = "#b52b27";
                 gameDiv.style.borderColor = "#8c2723";
-                }
             }
 
-            gamesContainer.appendChild(gameDiv);
+            betOnThisGame ? betongamesContainer.appendChild(gameDiv) : nobetgamesContainer.appendChild(gameDiv);
         });
 
-        weekDiv.appendChild(gamesContainer);
+        weekDiv.appendChild(betongamesHeader);
+        weekDiv.appendChild(betongamesContainer);
+        weekDiv.appendChild(document.createElement("br"))
+        weekDiv.appendChild(document.createElement("br"))
+        weekDiv.appendChild(document.createElement("br"))
+        weekDiv.appendChild(nobetgamesHeader)
+        weekDiv.appendChild(nobetgamesContainer);
         weekList.appendChild(weekDiv);
     }
 
