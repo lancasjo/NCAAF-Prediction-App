@@ -48,14 +48,14 @@ document.addEventListener("DOMContentLoaded", function () {
             
             const gameInfo = document.createElement("p");
             gameInfo.classList.add("game-info");
-            gameInfo.textContent = `${game["Home"]} Vs ${game["Away"]}`;
+            gameInfo.textContent = `${game["Away"]} at ${game["Home"]}`;
             gameDiv.appendChild(gameInfo);
 
             const scores = document.createElement("p");
             scores.classList.add("scores");
             scores.innerHTML = `
-                <span class="home-score">${game["Home Score"]}</span>
                 <span class="away-score">${game["Away Score"]}</span>
+                <span class="home-score">${game["Home Score"]}</span>
             `;
             gameDiv.appendChild(scores);
 
