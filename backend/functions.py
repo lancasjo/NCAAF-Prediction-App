@@ -331,7 +331,7 @@ def update_bets():
                 print("New game found")
                 old_games.append(new_game.turn_to_dict())
             else:
-                game_match["Spread"] = new_game.Spread
+                # game_match["Spread"] = new_game.Spread
                 game_match["Prediction"] = new_game.Prediction
         weeks.update_one(query, {"$set": {"Num Games": len(old_games)}})
         weeks.update_one(query, {"$set": {"Games": old_games}})
