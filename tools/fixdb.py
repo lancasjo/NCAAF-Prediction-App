@@ -6,7 +6,7 @@ import string
 import hashlib
 import sys
 sys.path.append('../')
-import backend.functions as functions
+#import backend.functions as functions
 
 
 from pymongo.mongo_client import MongoClient
@@ -27,10 +27,16 @@ except Exception as e:
 db = client["game-database"]
 collection = db["weeks-collection"]
 weeks = collection.find({})
+def update_predictions():
+    week_list = list(weeks)
+    for i in range (8):
+        games = week_list[i]["Games"]
+        for game in games:
+            game["Prediction"] -= 3
+        print(games)
+        collection.update_one({"Num": i}, {"$set": {"Games": games}})
 
-
-
-
+    
 def find_name_errors(weeks: dict) -> dict:
     week_counter = 0
     corrections = {}
@@ -74,11 +80,4 @@ def fix_name_errors(corrections: dict, weeks: dict) -> dict:
                     print("\tAway: " + oldaway + " -> " + game["Away"])
         collection.update_one({"_id": week["_id"]}, {"$set": week}, upsert=False)
 
-                
-
-corrections = find_name_errors(weeks)
-print(corrections)
-print("\n")
-print("\n")
-weeks = collection.find({})
-fix_name_errors(corrections, weeks)
+        

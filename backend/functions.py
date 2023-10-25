@@ -289,7 +289,7 @@ def run() -> list:
             print(away + " not found. Needs name conversion")
         if home not in team_scores:
             print(home + " not found. Needs name conversion")
-        prediction = team_scores[away] - team_scores[home] - 500
+        prediction = team_scores[away] - team_scores[home] - 200
         
         
         diff = prediction/100.0 - spreads[0]
