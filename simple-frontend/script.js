@@ -61,6 +61,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const betInfo = document.createElement("p");
             betInfo.classList.add("bet-info");
+            game["Prediction"] = Math.round(game["Prediction"]);
+            game["Prediction"] = game["Prediction"] == 0 ? "PK" : game["Prediction"]
             betInfo.innerHTML = `
                 <span class="spread">Spread: ${game["Spread"] > 0 ? "+" : ""}${game["Spread"]}</span>
                 <span class="algo">Algo: ${game["Prediction"] > 0 ? "+" : ""}${game["Prediction"]}</span>
