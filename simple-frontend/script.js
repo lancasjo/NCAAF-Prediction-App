@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
         //create 2 sections, one for the games that satisfy difference(game["Prediction"], game["Spread"]) > 4 and one for the games that don't
         //if the game satisfies the condition, add it to the first section, if not add it to the second section
 
+        const weekCorrect = document.createElement("p");
         const betongamesHeader = document.createElement("h2");
         betongamesHeader.textContent = "Good Bets";
         const betongamesContainer = document.createElement("div");
@@ -37,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
         nobetgamesContainer.classList.add("games-container");
 
         
-
+        var correct_count = 0;
 
         week["Games"].forEach(game => {
             const betOnThisGame = difference(game["Prediction"], game["Spread"]) > 4;
@@ -86,6 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             else if (game["Success"]) {
                 //green tint for success
+                correct_count++;
                 gameDiv.style.backgroundColor = "#008000"
                 gameDiv.style.borderColor = "#006400"
             } 
@@ -98,6 +100,10 @@ document.addEventListener("DOMContentLoaded", function () {
             betOnThisGame ? betongamesContainer.appendChild(gameDiv) : nobetgamesContainer.appendChild(gameDiv);
         });
 
+    
+        weekCorrect.textContent = "Correct: " + correct_count + "/" + week["Games"].length;
+        weekCorrect.classList.add("week-correct");
+        weekDiv.appendChild(weekCorrect);
         weekDiv.appendChild(betongamesHeader);
         weekDiv.appendChild(betongamesContainer);
         weekDiv.appendChild(document.createElement("br"))
@@ -107,6 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
         weekDiv.appendChild(nobetgamesContainer);
         weekList.appendChild(weekDiv);
     }
+    correct_count = 0;
 
     // Function to switch between weeks
     function showWeek(weekIndex) {
